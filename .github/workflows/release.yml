@@ -116,11 +116,11 @@ jobs:
           npm run release
           
       - name: Rename file 
-        run: mv ${{ env.release_name }}.zip ./deploy/${{ env.release_name }}-${{ env.release_tag }}.zip
+        run: mv ${{ env.release_name }}.zip ./${{ env.release_name }}-${{ env.release_tag }}.zip
 
       - name: "Add package to GitHub releases."
         uses: softprops/action-gh-release@v2
         with:
-          files: ./deploy/${{ env.release_name }}-${{ env.release_tag }}.zip
+          files: ./${{ env.release_name }}-${{ env.release_tag }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
