@@ -1,0 +1,46 @@
+{
+  "name": "backcourt/wc-mnm-debug-tools",
+  "description": "Custom mix and match debugging tools",
+  "homepage": "https://github.com/backcourt/wc-mnm-debug-tools",
+  "type": "wordpress-plugin",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "yahnis-elsts/plugin-update-checker": "^5.5"
+  },
+  "require-dev": {
+      "woocommerce/woocommerce-sniffs": "^1.0.0",
+      "wp-cli/i18n-command": "^2.5",
+      "coenjacobs/mozart": "^0.7.1"
+  },
+  "scripts": {
+    "makepot-audit": [
+      "wp --allow-root i18n make-pot . languages/wc-mnm-debug-tools.pot --slug=wc-mnm-debug-tools --exclude=\".github,.wordpress-org,node_modules,vendor,build,deploy\" '--headers=[\"Report-Msgid-Bugs-To: https://github.com/backcourt/wc-mnm-debug-tools/issues/new\"]'"
+    ],
+    "makepot": [
+      "@makepot-audit --skip-audit"
+    ],
+    "phpcs": [
+        "phpcs . -s -p -n --extensions=php"
+    ],
+    "phpcs-pre-commit": [
+      "phpcs . -s -p -n"
+    ],
+    "phpcb": [
+        "phpcbf . --extensions=php"
+    ]
+  },
+  "config": {
+    "allow-plugins": {
+        "composer/installers": true,
+        "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "extra": {
+    "scripts-description": {
+        "makepot-audit": "Make a .pot file with audit to find possible mistakes in translatable strings",
+        "makepot": "Make a .pot file without checking for mistakes",
+        "phpcs": "Analyze code against the WordPress coding standards with PHP_CodeSniffer",
+        "phpcb": "Fix coding standards warnings/errors automatically with PHP Code Beautifier"
+    }
+  }
+}
