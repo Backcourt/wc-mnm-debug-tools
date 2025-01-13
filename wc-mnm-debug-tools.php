@@ -3,7 +3,7 @@
  * Plugin Name: WC Mix and Match - Debug tools
  * Plugin URI: https://github.com/backcourt/wc-mnm-debug-tools
  * Description: Custom mix and match upgrade routine tools
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Backcourt Development
  * Author URI: https://backcourt.io
  * Requires at least: 6.6
