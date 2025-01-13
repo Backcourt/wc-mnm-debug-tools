@@ -26,12 +26,13 @@ Mix and Match should now re-spawn the update prompt and hopefully you can procee
 
 ### New Tools ##
 
-This plugin adds 2 tools specific to Mix and Match. 
+This plugin adds several tools specific to Mix and Match. 
 
 1. Reset the Mix and Match DB version to 2.0 - This was the old way to force the update prompt to re-appear, but it's a hard-reset to 2.0 which might not be appropriate if you still need the 2.0-specific routines (of which there were some major ones)
 2. Force run the Mix and Match update routines - Any available updates are added to the Action Scheduler. For example if the DB version is 1.9.x then all 2.0 and 2.2 updates will be scheduled for immedate execution.
+3. Repair foreign keys - The Foreign Key constraints can get out of whack if the DB tables are manually modified (specifically `wp_posts` is renamed). This drops the Mix and Match specific foreign keys and re-installs them.
 
-![WooCommerce>Status>Tools - two buttons for Mix and Match specific tools. 1. Reset the Mix and Match DB version to 2.0 and 2. Force run the update routines.](https://github.com/user-attachments/assets/0bf6a73f-f8e6-4f31-a189-aaa23554dc9d)
+![WooCommerce>Status>Tools - buttons for Mix and Match specific tools. 1. Reset the Mix and Match DB version to 2.0, 2. Force run the update routines, and 3. Repair foreign keys.](https://github.com/user-attachments/assets/c51a8f40-d2bd-4f08-af7e-8abeae6f6fb7)
 
 >**Warning**
 

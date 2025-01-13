@@ -51,6 +51,8 @@ add_action(
 add_filter(
 	'woocommerce_debug_tools',
 	function ( $tools ) {
+
+		global $wpdb;
 		$version                          = '2.0.0';
 		$tools['wc_mnm_reset_db_version'] = array(
 			'name'     => esc_html__( 'Reset Mix and Match DB version', 'wc-mnm-debug-tools' ),
@@ -81,6 +83,86 @@ add_filter(
 					return esc_html__( 'Mix and Match plugin is not activated.', 'wc-mnm-debug-tools' );
 				}
 			},
+		);
+
+		$tools['wc_mnm_repair_db_constraints'] = array(
+			'name'     => esc_html__( 'Repair database foreign key constraints', 'wc-mnm-debug-tools' ),
+			'button'   => esc_html__( 'Repair keys', 'wc-mnm-debug-tools' ),
+			'desc'     => sprintf(
+				'<strong class="red">%1$s</strong> %2$s',
+				__( 'Note:', 'wc-mnm-debug-tools' ),
+				__( 'This tool will update your Mix and Match Products database constraints to your curent `wp_posts` table.', 'wc-mnm-debug-tools' )
+			),
+			'callback' => function () use ( $wpdb ) {
+				check_ajax_referer( 'debug_action', '_wpnonce' );
+
+				try {
+
+					$wpdb->hide_errors();
+
+					$foreign_key_names = [
+						"fk_{$wpdb->prefix}wc_mnm_child_items_container_id",
+						"fk_{$wpdb->prefix}wc_mnm_child_items_product_id"
+					];
+					
+
+					foreach ( $foreign_key_names as $foreign_key_name ) {
+
+						$foreign_key_name = sanitize_key( $foreign_key_name );
+
+						$fk_exists = $wpdb->get_var(
+							$wpdb->prepare(
+								"
+								SELECT COUNT(*)
+								FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+								WHERE TABLE_NAME = %s
+									AND TABLE_SCHEMA = %s
+									AND CONSTRAINT_NAME = %s
+								",
+								"{$wpdb->prefix}wc_mnm_child_items", // Table name
+								DB_NAME,                             // Database name
+								$foreign_key_name                    // Foreign key name
+							)
+						);
+				
+						if ( $fk_exists ) {
+							// Remove foreign keys, so we can regenerate them.
+							$result = $wpdb->query( "ALTER TABLE {$wpdb->prefix}wc_mnm_child_items DROP CONSTRAINT $foreign_key_name" );
+
+							if ( false === $result ) {
+								// translators: %1$s: foreign key name. %2$s: error message.
+								return sprintf( esc_html__( 'Mix and Match DB %1$s key could not be removed because %2$s.', 'wc-mnm-debug-tools' ), $foreign_key_name, $wpdb->last_error );
+							}
+
+							$column_name = sanitize_key( str_replace( "fk_{$wpdb->prefix}wc_mnm_child_items_", '', $foreign_key_name ) );
+
+							// Construct the SQL query
+							$sql = "
+								ALTER TABLE {$wpdb->prefix}wc_mnm_child_items
+								ADD CONSTRAINT $foreign_key_name
+								FOREIGN KEY ($column_name)
+								REFERENCES {$wpdb->prefix}posts(ID)
+								ON DELETE CASCADE
+							";
+
+							// Execute the query
+							$result = $wpdb->query( $sql );
+
+							if ( false === $result ) {
+								// translators: %1$s: foreign key name. %2$s: error message.
+								return sprintf( esc_html__( 'Mix and Match DB %1$s foreign key could not be added because %2$s.', 'wc-mnm-debug-tools' ), $foreign_key_name, $wpdb->last_error );
+							}
+
+						}
+					}
+
+					return esc_html__( 'Mix and Match DB foreign keys are repaired.', 'wc-mnm-debug-tools' );
+
+				} catch ( Exception $e ) {
+					return esc_html__( 'Mix and Match DB could not be regenerated.', 'wc-mnm-debug-tools' );
+				}
+
+			}
 		);
 
 		return $tools;
