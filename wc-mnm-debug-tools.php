@@ -7,7 +7,7 @@
  * Author: Backcourt Development
  * Author URI: https://backcourt.io
  * Requires at least: 6.6
- * Requires PHP: 8.0
+ * Requires PHP: 7.4
  * Text Domain: wc-mnm-debug-tools
  * Domain Path: /languages
  *
