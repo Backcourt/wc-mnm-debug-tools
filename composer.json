@@ -4,9 +4,6 @@
   "homepage": "https://github.com/backcourt/wc-mnm-debug-tools",
   "type": "wordpress-plugin",
   "license": "GPL-3.0-or-later",
-  "require": {
-    "yahnis-elsts/plugin-update-checker": "^5.5"
-  },
   "require-dev": {
       "woocommerce/woocommerce-sniffs": "^1.0.0",
       "wp-cli/i18n-command": "^2.5",
