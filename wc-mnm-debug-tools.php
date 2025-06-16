@@ -100,72 +100,106 @@ add_filter(
 
 					$wpdb->hide_errors();
 
-					$foreign_key_names = array(
-						"fk_{$wpdb->prefix}wc_mnm_child_items_container_id",
-						"fk_{$wpdb->prefix}wc_mnm_child_items_product_id",
+					$fk_suffixes = array(
+						'wc_mnm_child_items_container_id',
+						'wc_mnm_child_items_product_id',
 					);
 
-					foreach ( $foreign_key_names as $foreign_key_name ) {
+					$dropped_keys = array();
 
-						$foreign_key_name = sanitize_key( $foreign_key_name );
+					// Delete all keys first.
+					foreach ( $fk_suffixes as $suffix ) {
 
-						$fk_exists = $wpdb->get_var(
+						// Build a partial match pattern like '%wc_mnm_child_items_product_id%'
+						$like_pattern = '%' . $wpdb->esc_like( $suffix ) . '%';
+
+						$fk_name = $wpdb->get_var(
 							$wpdb->prepare(
 								'
 								SELECT COUNT(*)
 								FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 								WHERE TABLE_NAME = %s
 									AND TABLE_SCHEMA = %s
-									AND CONSTRAINT_NAME = %s
+									AND CONSTRAINT_NAME LIKE %s
 								',
 								"{$wpdb->prefix}wc_mnm_child_items", // Table name.
 								DB_NAME,                             // Database name.
-								$foreign_key_name                    // Foreign key name.
+								$like_pattern                    // Foreign key pattern.
 							)
 						);
 
-						if ( $fk_exists ) {
-							// Remove foreign keys, so we can regenerate them.
-							$sql = sprintf( "ALTER TABLE {$wpdb->prefix}wc_mnm_child_items DROP FOREIGN KEY %s", $foreign_key_name );
+						// Get all matching foreign key names.
+						$fk_names = $wpdb->get_col(
+							$wpdb->prepare(
+								'
+								SELECT CONSTRAINT_NAME
+								FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+								WHERE TABLE_NAME = %s
+									AND TABLE_SCHEMA = %s
+									AND CONSTRAINT_NAME LIKE %s
+								',
+								"{$wpdb->prefix}wc_mnm_child_items",
+								DB_NAME,
+								$like_pattern
+							)
+						);
 
-							// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $wpdb->prepare() does not correctly handle keys or table names.
-							$result = $wpdb->query( $sql );
-
-							if ( false === $result ) {
-								// translators: %1$s: foreign key name. %2$s: error message.
-								return sprintf( esc_html__( 'Mix and Match DB %1$s key could not be removed because %2$s.', 'wc-mnm-debug-tools' ), $foreign_key_name, $wpdb->last_error );
-							}
-
-							$column_name = sanitize_key( str_replace( "fk_{$wpdb->prefix}wc_mnm_child_items_", '', $foreign_key_name ) );
-
-							// Add the foreign keys.
-
+						// Drop each matching foreign key.
+						foreach ( $fk_names as $fk_name ) {
 							$sql = sprintf(
-								"
-									ALTER TABLE {$wpdb->prefix}wc_mnm_child_items
-									ADD CONSTRAINT %s
-									FOREIGN KEY (%s)
-									REFERENCES {$wpdb->prefix}posts(ID)
-									ON DELETE CASCADE
-								",
-								$foreign_key_name,
-								$column_name
+								'ALTER TABLE %s DROP FOREIGN KEY %s',
+								$wpdb->prefix . 'wc_mnm_child_items',
+								sanitize_key( $fk_name )
 							);
 
-							// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $wpdb->prepare() does not correctly handle keys or table names.
+							// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 							$result = $wpdb->query( $sql );
 
 							if ( false === $result ) {
-								// translators: %1$s: foreign key name. %2$s: error message.
-								return sprintf( esc_html__( 'Mix and Match DB %1$s foreign key could not be added because %2$s.', 'wc-mnm-debug-tools' ), $foreign_key_name, $wpdb->last_error );
+								return sprintf(
+									esc_html__( 'Mix and Match DB %1$s key could not be removed because %2$s.', 'wc-mnm-debug-tools' ),
+									esc_html( $fk_name ),
+									esc_html( $wpdb->last_error )
+								);
 							}
+
+							$dropped_keys[] = $fk_name;
 						}
 					}
 
-					return esc_html__( 'Mix and Match DB foreign keys are repaired.', 'wc-mnm-debug-tools' );
+					// Add the correct foreign key back.
+					foreach ( $fk_suffixes as $suffix ) {
 
+						$fk_name     = 'fk_' . sanitize_key( $wpdb->prefix . $suffix );
+						$column_name = sanitize_key( str_replace( 'wc_mnm_child_items_', '', $suffix ) );
+
+						$sql = sprintf(
+							"
+							ALTER TABLE {$wpdb->prefix}wc_mnm_child_items
+							ADD CONSTRAINT %s
+							FOREIGN KEY (%s)
+							REFERENCES {$wpdb->prefix}posts(ID)
+							ON DELETE CASCADE
+							",
+							$fk_name,
+							$column_name
+						);
+
+						// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+						$result = $wpdb->query( $sql );
+
+						if ( false === $result ) {
+							return sprintf(
+								esc_html__( 'Mix and Match DB %1$s foreign key could not be added because %2$s.', 'wc-mnm-debug-tools' ),
+								esc_html( $fk_name ),
+								esc_html( $wpdb->last_error )
+							);
+						}
+					}
+
+					return sprintf( esc_html__( 'Mix and Match DB foreign keys are repaired. The following keys were removed: %s', 'wc-mnm-debug-tools' ), implode( ', ', $dropped_keys ) );
 				} catch ( Exception $e ) {
-					return esc_html__( 'Mix and Match DB could not be regenerated.', 'wc-mnm-debug-tools' );
+					return esc_html__( 'Mix and Match foreign keys could not be regenerated.', 'wc-mnm-debug-tools' );
 				}
 			},
 		);
