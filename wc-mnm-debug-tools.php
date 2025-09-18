@@ -204,6 +204,51 @@ add_filter(
 			},
 		);
 
+		$tools['wc_mnm_cleanup_duplicates'] = array(
+			'name'     => esc_html__( 'Clean up any duplicate child items', 'wc-mnm-debug-tools' ),
+			'button'   => esc_html__( 'Clean database', 'wc-mnm-debug-tools' ),
+			'desc'     => sprintf(
+				'<strong class="red">%1$s</strong> %2$s',
+				__( 'Note:', 'wc-mnm-debug-tools' ),
+				__( 'This tool will update your Mix and Match Products database to remove any duplicate child items', 'wc-mnm-debug-tools' )
+			),
+			'callback' => function () use ( $wpdb ) {
+				check_ajax_referer( 'debug_action', '_wpnonce' );
+
+				try {
+					$wpdb->hide_errors();
+
+					$sql = "
+						DELETE t1 FROM {$wpdb->prefix}wc_mnm_child_items t1
+						JOIN {$wpdb->prefix}wc_mnm_child_items t2
+						ON t1.product_id = t2.product_id
+						AND t1.container_id = t2.container_id
+						AND t1.child_item_id > t2.child_item_id"; 
+
+					$result = $wpdb->query( $wpdb->prepare( $sql ) );
+
+					if ( false === $result ) {
+						throw new Exception( $wpdb->last_error );
+					}
+
+					return esc_html__( 'Mix and Match DB duplicates were removed successfully', 'wc-mnm-debug-tools' );
+				} catch ( Exception $e ) {
+
+					$reason = $e->getMessage();
+
+					if ( $reason ) {
+						return sprintf(
+							esc_html__( 'Mix and Match DB duplicates could not be deleted. Reason: %1$s.', 'wc-mnm-debug-tools' ),
+							esc_html( $wpdb->last_error )
+						);
+					}
+
+					return esc_html__( 'Mix and Match DB duplicates could not be deleted.', 'wc-mnm-debug-tools' );
+
+				}
+			},
+		);
+
 		return $tools;
 	},
 	99
