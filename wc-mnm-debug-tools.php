@@ -53,16 +53,16 @@ add_filter(
 	function ( $tools ) {
 
 		global $wpdb;
-		$version                          = '2.0.0';
 		$tools['wc_mnm_reset_db_version'] = array(
 			'name'     => esc_html__( 'Reset Mix and Match DB version', 'wc-mnm-debug-tools' ),
 			'button'   => esc_html__( 'Reset DB version', 'wc-mnm-debug-tools' ),
-			'desc'     => sprintf( esc_html__( 'This will reset the Mix and Match DB version to 2.0.0.', 'wc-mnm-debug-tools' ), $version ),
-			'callback' => function () use ( $version ) {
+			'desc'     => esc_html__( 'This will remove the Mix and Match DB version.', 'wc-mnm-debug-tools' ),
+			'callback' => function () {
 				check_ajax_referer( 'debug_action', '_wpnonce' );
-				update_option( 'wc_mix_and_match_db_version', $version );
+				delete_option( 'wc_mix_and_match_db_version' );
+				delete_option( 'wc_mix_and_match_version' );
 				// translators: %s: version number.
-				return sprintf( esc_html__( 'Mix and Match DB version set to %s', 'wc-mnm-debug-tools' ), $version );
+				return esc_html__( 'Mix and Match DB version deleted', 'wc-mnm-debug-tools' );
 			},
 		);
 
@@ -74,8 +74,10 @@ add_filter(
 				__( 'Note:', 'wc-mnm-debug-tools' ),
 				__( 'This tool will update your Mix and Match Products database to the latest version. Please ensure you make sufficient backups before proceeding.', 'wc-mnm-debug-tools' )
 			),
-			'callback' => function () use ( $version ) {
+			'callback' => function () {
 				check_ajax_referer( 'debug_action', '_wpnonce' );
+				delete_option( 'wc_mix_and_match_db_version' );
+				delete_option( 'wc_mix_and_match_version' );
 				if ( is_callable( array( 'WC_MNM_Install', 'do_update_db' ) ) ) {
 					WC_MNM_Install::do_update_db();
 					return esc_html__( 'Mix and Match DB updates are scheduled.', 'wc-mnm-debug-tools' );
@@ -223,7 +225,7 @@ add_filter(
 						JOIN {$wpdb->prefix}wc_mnm_child_items t2
 						ON t1.product_id = t2.product_id
 						AND t1.container_id = t2.container_id
-						AND t1.child_item_id > t2.child_item_id"; 
+						AND t1.child_item_id > t2.child_item_id";
 
 					$result = $wpdb->query( $wpdb->prepare( $sql ) );
 
