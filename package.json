@@ -12,7 +12,7 @@
     "zip": "wp-scripts plugin-zip"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^30.18.0",
-    "replace-in-file": "^8.3.0"
+    "@wordpress/scripts": "^32.0.0",
+    "replace-in-file": "^8.4.0"
   }
 }
